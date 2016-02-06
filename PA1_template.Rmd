@@ -46,13 +46,15 @@ stat_per_day
 
 ## Time Series plot of the average number of steps taken
 ```{r, echo=TRUE}
-qplot(Date, Mean.steps.per.day, data=stat_per_day, geom="line", xlab="Date", ylab="Average number of steps taken")
+ave_steps_per_interval <- aggregate(steps~interval, data=activity, FUN=mean, na.rm=TRUE, na.action=NULL)
+
+qplot(interval, steps, data=ave_steps_per_interval, geom="line", xlab="Interval", ylab="Average number of steps taken")
 
 ```
 
 ## The 5-minute interval that, on average, contains the maximum number of steps
 ```{r, echo=TRUE}
-ave_steps_per_interval <- aggregate(steps~interval, data=activity, FUN=mean, na.rm=TRUE, na.action=NULL)
+
 v <- ave_steps_per_interval[ave_steps_per_interval$steps == max(ave_steps_per_interval$steps), ]
 v
 ```
@@ -107,75 +109,8 @@ is_weekend <- is.weekend(activity$date)
 activity$weekend <- "Weekday"
 activity[is_weekend, ]$weekend <- "Weekend"
 
-ave_steps_per_day <- aggregate(steps~interval+weekend, data=activity, FUN=ave)
+ave_steps_per_day <- aggregate(steps~interval+weekend, data=activity, FUN=mean)
 
-qplot(interval, steps, data=activity, geom="line", facets = .~weekend)
+qplot(interval, steps, data=ave_steps_per_day, geom="line", facets = .~weekend)
 
-```
-
-## All of the R code
-```{r, eval=FALSE, echo=TRUE}
-library(ggplot2)
-
-# read in data files
-setwd("e:\\RExercise\\reproducible research")
-activity <- read.csv("activity.csv")
-
-# histogram without imputing
-total_steps_per_day <- aggregate(steps~date, data=activity, FUN=sum, na.rm=TRUE)
-View(total_steps_per_day)
-
-hist(total_steps_per_day$steps, xlab="Total(steps) per day", main="Mean Total Number of Step per day <Before inputing>")
-
-mean_steps_per_day <- setNames(aggregate(steps~date, activity,FUN =mean), c("Date", "Mean.steps.per.day"))
-median_steps_per_day <- setNames(aggregate(steps~date, activity, FUN=median), c("Date", "Median.steps.per.day"))
-
-#mean_steps_per_day
-#median_steps_per_day
-stat_per_day <- merge(mean_steps_per_day,median_steps_per_day)
-stat_per_day$Date <- as.Date(stat_per_day$Date, format="%Y-%m-%d")
-stat_per_day
-
-qplot(Date, Mean.steps.per.day, data=stat_per_day, geom="line", xlab="Date", ylab="Average number of steps taken")
-
-ave_steps_per_interval <- aggregate(steps~interval, data=activity, FUN=mean, na.rm=TRUE, na.action=NULL)
-v <- ave_steps_per_interval[ave_steps_per_interval$steps == max(ave_steps_per_interval$steps), ]
-v
-
-# imputing
-
-# calculate mean steps for each interval
-# this mean value will be used for missing values
-ave_steps_per_interval <- aggregate(steps~interval, data=activity, FUN=mean, na.rm=TRUE, na.action=NULL)
-
-#replicate 61 times since there are 60 intervals in the data
-#to vectorize rbind rows into long vectors
-long_ave_steps_per_interval <- ave_steps_per_interval
-for(i in 1:60) {
-  long_ave_steps_per_interval <- rbind(long_ave_steps_per_interval, ave_steps_per_interval)
-}
-
-#calculate na vector for step column
-na_vectors <- is.na(activity$steps)
-
-#imput NAs with average of the interval
-activity[na_vectors, ]$steps <- long_ave_steps_per_interval[na_vectors,]$steps
-
-
-# show histogram after imputing
-total_steps_per_day <- aggregate(steps~date, data=activity, FUN=sum)
-View(total_steps_per_day)
-
-hist(total_steps_per_day$steps, xlab="Total(steps) per day", main="Mean Total Number of Step per day <After imputing>")
-
-# calculate average steps for day
-
-library(chron)
-is_weekend <- is.weekend(activity$date)
-activity$weekend <- "Weekday"
-activity[is_weekend, ]$weekend <- "Weekend"
-
-ave_steps_per_day <- aggregate(steps~interval+weekend, data=activity, FUN=ave)
-
-qplot(interval, steps, data=activity, geom="line", facets = .~weekend)
 ```
